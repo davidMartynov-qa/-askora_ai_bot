@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.log
+.venv/
+*.sqlite3
+*.sqlite3-*
+*.bak
+*.bak_*
+*.mp4

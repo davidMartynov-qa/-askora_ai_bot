@@ -1,0 +1,18 @@
+[Unit]
+Description=bot_grok telegram backend (bot.py only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/bot_grok
+EnvironmentFile=/opt/bot_grok/.env
+ExecStart=/opt/bot_grok/.venv/bin/python /opt/bot_grok/bot.py
+Restart=always
+RestartSec=5
+KillSignal=SIGINT
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target
