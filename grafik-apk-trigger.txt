@@ -1,0 +1,2 @@
+Build Grafik APK from sanitized Android source archive.
+Expected source SHA-256: 560e713ba0a2cc9067a7e1313a5d9ca3251f8654065c3c858af37dbed48f62f4
