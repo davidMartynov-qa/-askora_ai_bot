@@ -1,0 +1,77 @@
+name: Build Grafik APK
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'grafik-apk-source/**'
+      - 'grafik-apk-trigger.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout APK source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Restore Android project
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p android-project
+          cat grafik-apk-source/chunk-*.txt | tr -d '\r\n' | base64 --decode > android-project.zip
+          unzip -q android-project.zip -d android-project
+          test -f android-project/settings.gradle
+          test -f android-project/app/build.gradle
+          test -f android-project/app/src/main/AndroidManifest.xml
+
+      - name: Build installable APK
+        shell: bash
+        working-directory: android-project
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+
+      - name: Prepare APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK_PATH="$(find android-project/app/build/outputs/apk/debug -type f -name '*.apk' | head -n 1)"
+          test -n "$APK_PATH"
+          cp "$APK_PATH" Grafik-sotrudnikov.apk
+          ls -lh Grafik-sotrudnikov.apk
+          sha256sum Grafik-sotrudnikov.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Grafik-sotrudnikov-APK
+          path: Grafik-sotrudnikov.apk
+          if-no-files-found: error
+          retention-days: 14
